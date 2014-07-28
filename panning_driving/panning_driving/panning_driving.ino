@@ -5,7 +5,7 @@
 
 Servo servoIR;
 Servo servoUS;
-int IRPos = 0;
+int IRPos = 180;
 int USPos = 0;
 float USdistance = 0;
 float IRdistance = 0;
@@ -16,65 +16,67 @@ int motor_right_speed = 90;
 int i = 0;
 int USpin = 8;
 int GP2D12pin = 10;
-int sensing_dist = 30;
+int sensing_dist = 31;
 
 void setup() {
   servoIR.attach(13);
   servoUS.attach(12);
-  motor_left.attach(3);
-  motor_right.attach(2);
+  motor_left.attach(2);
+  motor_right.attach(3);
   servoIR.write(90);
   servoUS.write(90);
   motor_left.write(motor_left_speed);
   motor_right.write(motor_right_speed);
   drive();
+  servoIR.write(IRPos);
+  servoUS.write(USPos);
 }
 
 void loop() {
-  for (i = 0; i =< 90; i++) {
-    IRPos = i;
-    USPos = 180 - i;
+  for (i = 0; i <= 90; i++) {
+    IRPos = 180 - i;
+    USPos = i;
     servoIR.write(IRPos);
     servoUS.write(USPos);
     USdistance = read_ul_sensor_range();
     IRdistance = read_gp2d12_range();
-    if (((USdistance <= sensing_dist) && (USPos > 90)) || ((IRdistance <= sensing_dist) && (IRPos > 90))) {
-      turn_left();
-    }
-    else if (((USdistance <= sensing_dist) && (USPos < 90)) || ((IRdistance <= sensing_dist) && (IRPos < 90))) {
+    if ((IRdistance <= sensing_dist) && (IRPos != 90)) {
       turn_right();
     }
+    else if ((USdistance <= sensing_dist) && (USPos !=90)) {
+      turn_left();
+    }
     else if (((USdistance <= sensing_dist) && (USPos == 90)) || ((IRdistance <= sensing_dist) && (IRPos == 90))) {
-     reverse();
-     delay(100);
-     turn_left();
-    } 
+      reverse();
+      delay(100);
+      turn_left();
+    }
     else {
       drive();
     }
     delay(10);
   }
   for (i = 90; i >= 0; i--) {
-    IRPos = i;
-    USPos = 90 - i;
+    IRPos = 180 - i;
+    USPos = i;
     servoIR.write(IRPos);
     servoUS.write(USPos);
     USdistance = read_ul_sensor_range();
     IRdistance = read_gp2d12_range();
-    if (((USdistance <= sensing_dist) && (USPos > 90)) || ((IRdistance <= sensing_dist) && (IRPos > 90))) {
-      turn_left();
-    }
-    else if (((USdistance <= sensing_dist) && (USPos < 90)) || ((IRdistance <= sensing_dist) && (IRPos < 90))) {
+    if ((IRdistance <= sensing_dist) && (IRPos != 90)) {
       turn_right();
     }
-    else if (((USdistance <= sensing_dist) && (USPos == 90)) || ((IRdistance <= sensing_dist) && (IRPos == 90))) {
-     reverse();
-     delay(100);
-     turn_left();
+    else if ((USdistance <= sensing_dist) && (USPos !=90)) {
+      turn_left();
     }
-   else {
-    drive();
-   } 
+    else if (((USdistance <= sensing_dist) && (USPos == 90)) || ((IRdistance <= sensing_dist) && (IRPos == 90))) {
+      reverse();
+      delay(100);
+      turn_left();
+    }
+    else {
+      drive();
+    }
     delay(10);
   }
 }
@@ -107,21 +109,21 @@ float read_gp2d12_range(void) {
 }
 
 void turn_left(void) {
-  motor_left.write(125);
-  motor_right.write(55);
+  motor_left.write(55);
+  motor_right.write(125);
 }
 
 void turn_right(void) {
-  motor_left.write(55);
-  motor_right.write(125);
+  motor_left.write(125);
+  motor_right.write(55);
 }
 
 void reverse(void) {
-  motor_left.write(125);
-  motor_right.write(125);
+  motor_left.write(55);
+  motor_right.write(55);
 }
 
 void drive(void) {
-  motor_left.write(55);
-  motor_right.write(55);
+  motor_left.write(125);
+  motor_right.write(125);
 } 
