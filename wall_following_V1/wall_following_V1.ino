@@ -3,53 +3,94 @@
 
 #include <Servo.h>
 
-#define WALL_LEFT 0;
-#define WALL_RIGHT 1;
-#define WALL_UNKNOWN 2;
+#define DRIVE_SPEED 130
+#define STOP_SPEED 90
+#define K_P 3
 
 float USdistance = 0;
-float IR1distance = 0;
-float IR2distance = 0;
+float IRLeftdistance = 0;
+float IRRightdistance = 0;
+
 Servo motor_left;
 Servo motor_right;
+
 int motor_left_speed = 90;
 int motor_right_speed = 90;
-int USpin = 8;
-int GP2D12pin1 = 10;
-int GP2D12pin2 = 0x0; //NEEDS TO BE UPDATED
-int US_sensing_dist = 31;
-int IR_sensing_dist = 15;
-unsigned int tolerance = 5;
-unsigned char wall_dir = WALL_UNKNOWN;
-unsigned char wall_dir_prev = WALL_UNKNOWN;
+
+static byte USpin = 8;
+static byte LeftGP2D12pin = 10;
+static byte RightGP2D12pin = 6;
+
+int US_sensing_dist = 35;
+int IR_sensing_dist = 35;
+static int target_distance = 20;
+
+boolean wall_left = false;
+boolean wall_right = false;
+boolean wall_foward = false;
+
+static long polling_time = 0;
+
 
 void setup() {
-  motor_left.attach(2);
-  motor_right.attach(3);
-  motor_left.write(motor_left_speed);
-  motor_right.write(motor_right_speed);
+  motor_left.attach(3);
+  motor_right.attach(2);
   drive();
 }
 
 void loop() {
-  USdistance = read_ul_sensor_range();
-  IR1distance = read_gp2d12_range(GP2D12pin1);
-  IR2distance = read_gp2d12_range(GP2D12pin2);
-  if (IR1distance <= IR_sensing_dist) {
-    wall_dir = WALL_LEFT;
+  if (polling_time >= 800) {
+    polling_time = 0;
+    poll_sensors();
   }
-  else if (IR2distance <= IR_sensing_dist) {
-    wall_dir = WALL_RIGHT;
+  if (!wall_foward) {
+    speed_control();
   }
-  else {
-    wall_dir = WALL_UNKNOWN;
+  if (wall_foward && wall_left) {  
+    turn_right();
+  }
+  if (wall_foward && wall_right) {
+    turn_left();
+  }
+  if (!wall_foward && !wall_left && !wall_right) {
+    drive();
+  }
+  polling_time++;
+}
+
+
+void speed_control(void) {
+ if (wall_right && !wall_left) {
+   motor_left.write(DRIVE_SPEED + K_P * (IRRightdistance - target_distance));
+ }
+ if (wall_left && !wall_right) {
+   motor_right.write(DRIVE_SPEED + K_P * (IRLeftdistance - target_distance));
+ }
+}
+
+void poll_sensors(void) {
+  wall_left = false;
+  wall_right = false;
+  wall_foward = false;
+  USdistance = read_ul_sensor_range(USpin);
+  IRLeftdistance = read_gp2d12_range(LeftGP2D12pin);
+  IRRightdistance = read_gp2d12_range(RightGP2D12pin);
+  if (USdistance <= US_sensing_dist) {
+    wall_foward = true;
+  }
+  if ((IRLeftdistance != -1) && (IRLeftdistance <= IR_sensing_dist)) {
+    wall_left = true;
+  }
+  if ((IRRightdistance != -1) && (IRRightdistance <= IR_sensing_dist)) {
+    wall_right = true;
   }
 }
 
-float read_ul_sensor_range(void) {
+
+float read_ul_sensor_range(byte pin) {
   int tmp = 0;
   float range = 0;
-  tmp = analogRead(USpin);
+  tmp = analogRead(pin);
   //Min val ~ 56 (dist. <= 30cm), ~58 at 30cm
   //ADC value increases by ~20 per 10 cm (from rough testing; check with Julian)
   if (tmp <= 58) {
@@ -89,6 +130,6 @@ void reverse(void) {
 }
 
 void drive(void) {
-  motor_left.write(125);
-  motor_right.write(125);
+  motor_left.write(DRIVE_SPEED);
+  motor_right.write(DRIVE_SPEED);
 } 
