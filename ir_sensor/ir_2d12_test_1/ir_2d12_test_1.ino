@@ -1,6 +1,5 @@
 float val = 0;
 int pin = 10;
-static const float ADC_ratio = 5.0/1023.0;
 
 void setup() {
   Serial.begin(9600);
@@ -13,7 +12,7 @@ void loop() {
 }
 
 // This code seems to work fairly well, although the range is slightly off (close enough though)
-float read_gp2d12_range(int pin) {
+float read_gp2d12_range(byte pin) {
   int tmp = 0;
   float range = 0;
   tmp = analogRead(pin);

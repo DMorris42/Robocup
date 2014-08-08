@@ -39,6 +39,7 @@ void setup() {
   motor_left.attach(3);
   motor_right.attach(2);
   drive();
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -57,8 +58,10 @@ void loop() {
   }
   if (wall_foward && !wall_left && !wall_right) {
     reverse();
-    delay(100);
+    delay(500);
     turn_left();
+    delay(700);
+    poll_sensors();
   }
   if (!wall_foward && !wall_left && !wall_right) {
     drive();
@@ -87,7 +90,7 @@ void poll_sensors(void) {
   /*if (USdistance <= US_sensing_dist) {
     wall_foward = true;
   }*/
-  if (IRLongdistance <= IR_long_sensing_dist) {
+  if ((IRLongdistance != -1) && (IRLongdistance <= IR_long_sensing_dist)) {
     wall_foward = true;
   }
   if ((IRLeftdistance != -1) && (IRLeftdistance <= IR_sensing_dist)) {
