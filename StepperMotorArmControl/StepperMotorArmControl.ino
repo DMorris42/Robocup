@@ -1,11 +1,14 @@
 /*
 This code controls the rotation of a stepper motor
 Used for controlling motion of the arm within specified operational angles
+Note that the stepper moves 1.8 degreees per step (+/- 5%, full step, no load)
 */
 
 // Currently on stepper port 3 (pins closest to motor, far side of board)
 int M3dirpin = 35;
 int M3steppin = 34;
+
+static const float DEGREE_PER_STEP = 1.8;
 
 void setup()
 {
@@ -16,10 +19,10 @@ void setup()
 void loop()
 {
   arm_dir_up();
-  move_arm(900);
+  move_arm(20);
   delay(1000);
   arm_dir_down();
-  move_arm(100);
+  move_arm(15);
   delay(1000);
 }
 
@@ -33,11 +36,11 @@ void arm_dir_down(void) {
   digitalWrite(M3dirpin, HIGH);
 }
 
-// Moves the arm
-void move_arm(int time) {
-  int j;
-  // Rotates the arm for time/1000 seconds (approx - should use timer later if more accuracy requried)
-  for (j = 0; j <= time; j++) {
+// Moves the arm by a certain angle, independent of direction
+void move_arm(int angle) {
+  float j;
+  float steps = angle/DEGREE_PER_STEP;  // Rotates the arm for time/1000 seconds (approx - should use timer later if more accuracy requried)
+  for (j = 0.0; j <= steps; j++) {
     digitalWrite(M3steppin, LOW);
     delayMicroseconds(2);
     digitalWrite(M3steppin, HIGH);
