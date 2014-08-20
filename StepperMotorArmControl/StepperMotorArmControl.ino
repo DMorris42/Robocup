@@ -19,11 +19,11 @@ void setup()
 void loop()
 {
   arm_dir_up();
-  move_arm(20);
-  delay(1000);
+  move_arm(150);
+  delay(100);
   arm_dir_down();
-  move_arm(15);
-  delay(1000);
+  move_arm(50);
+  delay(100);
 }
 
 // Sets the direction of rotation to lift the arm
