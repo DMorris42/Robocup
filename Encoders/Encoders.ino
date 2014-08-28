@@ -1,55 +1,70 @@
-//EncoderC
+/* Reads encoder interrupts from wheels and increments counters
+Has no sense of direction though; will need movement state for each wheel
+*/
 
-#include <Servo.h>
+//663 Pulses per revolution, but quadrature so need to double (?). Seems to work better.
+static const int ENCODER_COUNTS = 663*2;
+//Degrees per count
+static const float ENCODER_COUNT_ANGLE = 0.54;
 
-Servo myservo1,myservo2;  // create servo object to control a servo
+volatile unsigned int encoderPosLeft = 0;
+volatile unsigned int lastReportedPosLeft = 1;
+volatile unsigned int encoderPosRight = 0;
+volatile unsigned int lastReportedPosRight = 1;
 
-enum PinAssignments {
-  encoder1PinA = 19,
-  encoder1PinB = 24,
-  encoder2PinA = 18,
-  encoder2PinB = 25,
-};
-
-volatile unsigned int encoderPosA = 0;
-volatile unsigned int lastReportedPosA = 1;
-volatile unsigned int encoderPosB = 0;
-volatile unsigned int lastReportedPosB = 1;
+volatile unsigned int revolutionsLeft = 0;
+volatile unsigned int revolutionsRight = 0;
+volatile unsigned int lastReportedRevolutionsLeft = 0;
+volatile unsigned int lastReportedRevolutionsRight = 0;
 
 
 void setup() {
-  myservo1.attach(12);  // attaches the servo on pin 9 to the servo object
-  myservo2.attach(13);
-
 // Encoder pin on interrupt 4
-  attachInterrupt(4, doEncoder1A, CHANGE);
+  attachInterrupt(4, doEncoderRight, CHANGE);
 // Encoder pin on interrupt 5
-  attachInterrupt(5, doEncoder2A, CHANGE);
+  attachInterrupt(5, doEncoderLeft, CHANGE);
   Serial.begin(9600);
 }
 
 
 void loop()
 {   
-  if ((lastReportedPosA != encoderPosA) || (lastReportedPosB != encoderPosB)) {
-    Serial.print("Index:");
-    Serial.print(encoderPosA, DEC);
+  /*if ((lastReportedPosLeft != encoderPosLeft) || (lastReportedPosRight != encoderPosRight)) {
+    Serial.print("Left/Right:");
+    Serial.print(encoderPosLeft, DEC);
     Serial.print(":");
-    Serial.print(encoderPosB, DEC);
+    Serial.print(encoderPosRight, DEC);
     Serial.println();
-    lastReportedPosA = encoderPosA;
-    lastReportedPosB = encoderPosB;
+    lastReportedPosLeft = encoderPosLeft;
+    lastReportedPosRight = encoderPosRight;
+  }*/
+  if ((lastReportedRevolutionsLeft != revolutionsLeft) || (lastReportedRevolutionsRight != revolutionsRight)) {
+    Serial.print("Left rev/Right rev:");
+    Serial.print(revolutionsLeft, DEC);
+    Serial.print(":");
+    Serial.print(revolutionsRight, DEC);
+    Serial.println();
+    lastReportedRevolutionsLeft = revolutionsLeft;
+    lastReportedRevolutionsRight = revolutionsRight;
   }
 }
 
 // Interrupt on A changing state
-void doEncoder1A(){
-  encoderPosA++;
+void doEncoderLeft(){
+  encoderPosLeft++;
+  if (encoderPosLeft == ENCODER_COUNTS) {
+    encoderPosLeft = 0;
+    revolutionsLeft++;
+  }
 }
 
 
 // Interrupt on A changing state
-void doEncoder2A(){
-  encoderPosB++;
+void doEncoderRight(){
+  encoderPosRight++;
+  if (encoderPosRight == ENCODER_COUNTS) {
+    encoderPosRight = 0;
+    revolutionsRight++;
+  }
 }
 
