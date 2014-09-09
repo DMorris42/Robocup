@@ -18,22 +18,26 @@ void setup()
 }
 void loop()
 {
-  arm_dir_up();
-  move_arm(150);
-  delay(100);
+  /*delay(500);
   arm_dir_down();
-  move_arm(50);
-  delay(100);
+  move_arm(200);*/
+  delay(800);
+  arm_dir_up();
+  move_arm(800);
+  /*while(1) {
+    Serial.println("Done");
+    delay(1000);
+  }*/
 }
 
 // Sets the direction of rotation to lift the arm
 void arm_dir_up(void) {
-  digitalWrite(M3dirpin, LOW);
+  digitalWrite(M3dirpin, HIGH);
 }
 
 // Sets the direction of rotation to lower the arm
 void arm_dir_down(void) {
-  digitalWrite(M3dirpin, HIGH);
+  digitalWrite(M3dirpin, LOW);
 }
 
 // Moves the arm by a certain angle, independent of direction
@@ -42,7 +46,7 @@ void move_arm(int angle) {
   float steps = angle/DEGREE_PER_STEP;  // Rotates the arm for time/1000 seconds (approx - should use timer later if more accuracy requried)
   for (j = 0.0; j <= steps; j++) {
     digitalWrite(M3steppin, LOW);
-    delayMicroseconds(2);
+    delayMicroseconds(1);
     digitalWrite(M3steppin, HIGH);
     delay(1);
   }
