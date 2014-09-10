@@ -14,16 +14,16 @@ void setup()
 {
   pinMode(M3dirpin,OUTPUT);
   pinMode(M3steppin,OUTPUT);
-  Serial.begin(9600);
+  //Serial.begin(9600);
 }
 void loop()
 {
-  /*delay(500);
+  /*delay(800);
   arm_dir_down();
-  move_arm(200);*/
+  move_arm(500);*/
   delay(800);
   arm_dir_up();
-  move_arm(800);
+  move_arm(700);
   /*while(1) {
     Serial.println("Done");
     delay(1000);
@@ -46,9 +46,9 @@ void move_arm(int angle) {
   float steps = angle/DEGREE_PER_STEP;  // Rotates the arm for time/1000 seconds (approx - should use timer later if more accuracy requried)
   for (j = 0.0; j <= steps; j++) {
     digitalWrite(M3steppin, LOW);
-    delayMicroseconds(1);
+    delayMicroseconds(2);
     digitalWrite(M3steppin, HIGH);
-    delay(1);
+    delay(10);
   }
 }
   
