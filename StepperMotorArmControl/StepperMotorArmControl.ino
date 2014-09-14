@@ -18,9 +18,9 @@ void setup()
 }
 void loop()
 {
-  /*delay(800);
+  delay(800);
   arm_dir_down();
-  move_arm(500);*/
+  move_arm(500);
   delay(800);
   arm_dir_up();
   move_arm(700);
@@ -48,7 +48,7 @@ void move_arm(int angle) {
     digitalWrite(M3steppin, LOW);
     delayMicroseconds(2);
     digitalWrite(M3steppin, HIGH);
-    delay(10);
+    delay(5);
   }
 }
   

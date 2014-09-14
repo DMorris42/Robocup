@@ -1,17 +1,16 @@
 /* Driving using the rotary encoders for sensing distance
-Note right encoder lags left. This accumulates over time and could be a problem. May need to adjust tension on both tracks to match them.
+Note right encoder lags left. This accumulates over time and is a problem. Need to adjust tension on both tracks to match them.
 */
 
 #include <Servo.h>
 
-#define DRIVE_SPEED 135
+#define DRIVE_SPEED 155
 #define STOP_SPEED 90
 #define REVERSE_SPEED 55
 #define TURN_WHEEL_SLOW 55
 #define TURN_WHEEL_FAST 125
 
-#define REVOLUTION_DIST 215  //Distance, in mm, covered in one rev of wheel with tracks (measured; could be up to 219 mm)
-//This distance may be slightly too big from testing
+#define REVOLUTION_DIST 219  //Distance, in mm, covered in one rev of wheel with tracks (measured; could be up to 219 mm)
 
 typedef enum Direction{
   forward,
@@ -36,7 +35,7 @@ volatile int revolutionsRight = 0;
 volatile int lastReportedRevolutionsLeft = 0;
 volatile int lastReportedRevolutionsRight = 0;
 
-volatile float dist_travelled = 0; //Distance robot has travelled (total dist in any combo of directions)
+volatile int dist_travelled = 0; //Distance robot has travelled (total dist in any combo of directions)
 
 Servo motor_left;
 Servo motor_right;
@@ -54,7 +53,6 @@ void setup() {
   motor_right.attach(2);
   Serial.begin(9600);
   drive();
-  delay(100);
 }
 
 
@@ -71,21 +69,37 @@ void loop()
   }*/
   
   //DISTANCE TESTING CODE END
+  
+  //DISTANCE DRIVING CODE BEGIN
   if (max(encoderPosLeft, encoderPosRight) != 0) {
-    dist_travelled = max(revolutionsLeft, revolutionsRight)*REVOLUTION_DIST + (float(max(encoderPosLeft, encoderPosRight))/float(ENCODER_COUNTS))* REVOLUTION_DIST;
+    //dist_travelled = max(revolutionsLeft, revolutionsRight)*REVOLUTION_DIST + (float(max(encoderPosLeft, encoderPosRight))/float(ENCODER_COUNTS))* REVOLUTION_DIST; //Taking max
+    dist_travelled = ((revolutionsLeft + revolutionsRight)/2)*REVOLUTION_DIST + (float(max(encoderPosLeft, encoderPosRight))/float(ENCODER_COUNTS))* REVOLUTION_DIST; //Taking average
   }
-  /*else {
-    dist_travelled = max(revolutionsLeft, revolutionsRight)*REVOLUTION_DIST;
-  }*/
+  else {
+    //dist_travelled = max(revolutionsLeft, revolutionsRight)*REVOLUTION_DIST;
+    dist_travelled = ((revolutionsLeft + revolutionsRight)/2) * REVOLUTION_DIST;
+  }
   Serial.println(dist_travelled, DEC);
   
-  if (dist_travelled >= 1000) {
+  if (dist_travelled >= 1020) {
     motor_stop();
     Serial.print("DISTANCE REACHED:");
     Serial.print(dist_travelled, DEC);
-    while (1) {
-    }
+    /*while (1) {
+    }*/
+    delay(3000);
+    dist_travelled = 0;
+    revolutionsLeft = 0;
+    revolutionsRight = 0;
+    encoderPosLeft = 0;
+    encoderPosRight = 0;
+    Serial.println("DIST = 0");
+    Serial.println(dist_travelled, DEC);
   }
+  Serial.println("Driving");
+  drive();
+  
+  //DISTANCE TESTING CODE END 
     
   //ENCODER VALUE TESTING BEGIN  
   
@@ -97,8 +111,8 @@ void loop()
     Serial.println();
     lastReportedPosLeft = encoderPosLeft;
     lastReportedPosRight = encoderPosRight;
-  }*/
-  /*if ((lastReportedRevolutionsLeft != revolutionsLeft) || (lastReportedRevolutionsRight != revolutionsRight)) {
+  }
+  if ((lastReportedRevolutionsLeft != revolutionsLeft) || (lastReportedRevolutionsRight != revolutionsRight)) {
     Serial.print("Left rev/Right rev:");
     Serial.print(revolutionsLeft, DEC);
     Serial.print(":");
@@ -115,7 +129,7 @@ void loop()
 void doEncoderLeft(){
   if (robot_dir != backwards) {
     encoderPosLeft++;
-    if (encoderPosLeft == ENCODER_COUNTS) {
+    if (encoderPosLeft >= ENCODER_COUNTS) {
         encoderPosLeft = 0;
         revolutionsLeft++;
     }
@@ -147,7 +161,7 @@ void doEncoderRight() {
     }
     else {
       revolutionsRight--;
-      encoderPosRight = ENCODER_COUNTS - 1; //This breaks it if any value other than 0 or 1 is used. I don't know why...
+      encoderPosRight = ENCODER_COUNTS - 1;
     }
   }
 }
