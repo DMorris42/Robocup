@@ -9,6 +9,8 @@ Note that the stepper moves 1.8 degreees per step (+/- 5%, full step, no load)
 // Currently on stepper port 3 (pins closest to motor, far side of board)
 int M3dirpin = 35;
 int M3steppin = 34;
+static volatile int time = 0;
+static volatile int prev_time = 0;
 
 static const float DEGREE_PER_STEP = 1.8;
 
@@ -17,18 +19,39 @@ void setup()
   pinMode(M3dirpin,OUTPUT);
   pinMode(M3steppin,OUTPUT);
   //Serial.begin(9600);
+  delay(150);
 }
 void loop()
 {
-  delay(800);
+  time = millis();
+  /*delay(800);
   arm_dir_down();
-  move_arm(200);
-  delay(800);
+  move_arm(90);*/
+  //delay(800);
   arm_dir_up();
-  move_arm(300);
+  move_arm(1);
+  if ((time - prev_time) >= 1500) {
+    delay(1000);
+    arm_dir_down();
+    move_arm(220);
+    delay(1000);
+    time = millis();
+    prev_time = time;
+  }
   /*while(1) {
     Serial.println("Done");
     delay(1000);
+  }*/
+  /*arm_dir_up();
+  move_arm(1);
+  if (time >= 1500) {
+    arm_dir_down();
+    while (time < 3000) {
+      time = millis();
+      move_arm(1);
+    }
+  }
+  while (1) {
   }*/
 }
 
@@ -45,12 +68,12 @@ void arm_dir_down(void) {
 // Moves the arm by a certain angle, independent of direction
 void move_arm(int angle) {
   float j = 0;
-  float steps = (angle/DEGREE_PER_STEP) * GEAR_RATIO;
+  int steps = (angle/DEGREE_PER_STEP) * GEAR_RATIO * 2;
   for (j = 0.0; j <= steps; j++) {
     digitalWrite(M3steppin, LOW);
-    delayMicroseconds(2);
+    delayMicroseconds(1);
     digitalWrite(M3steppin, HIGH);
-    delay(5);
+    delay(1);
   }
 }
   
