@@ -18,10 +18,10 @@ Servo motor_right;
 int motor_left_speed = 90;
 int motor_right_speed = 90;
 
-//static byte USpin = 8;
-static byte IR_long_pin = 8;
+static byte USpin = 8;
+//static byte IR_long_pin = 8;
 static byte LeftGP2D12pin = 10;
-static byte RightGP2D12pin = 6;
+static byte RightGP2D12pin = 0;
 
 int US_sensing_dist = 35;
 int IR_sensing_dist = 35;
@@ -83,16 +83,16 @@ void poll_sensors(void) {
   wall_left = false;
   wall_right = false;
   wall_foward = false;
-  //USdistance = read_ul_sensor_range(USpin);
-  IRLongdistance = read_IR_long_range(IR_long_pin);
+  USdistance = read_ul_sensor_range(USpin);
+  //IRLongdistance = read_IR_long_range(IR_long_pin);
   IRLeftdistance = read_gp2d12_range(LeftGP2D12pin);
   IRRightdistance = read_gp2d12_range(RightGP2D12pin);
-  /*if (USdistance <= US_sensing_dist) {
-    wall_foward = true;
-  }*/
-  if ((IRLongdistance != -1) && (IRLongdistance <= IR_long_sensing_dist)) {
+  if ((USdistance != -1) && (USdistance <= US_sensing_dist)) {
     wall_foward = true;
   }
+  /*if ((IRLongdistance != -1) && (IRLongdistance <= IR_long_sensing_dist)) {
+    wall_foward = true;
+  }*/
   if ((IRLeftdistance != -1) && (IRLeftdistance <= IR_sensing_dist)) {
     wall_left = true;
   }
