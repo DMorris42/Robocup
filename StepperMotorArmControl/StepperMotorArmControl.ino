@@ -19,7 +19,7 @@ void setup()
   pinMode(M3dirpin,OUTPUT);
   pinMode(M3steppin,OUTPUT);
   //Serial.begin(9600);
-  delay(150);
+  delay(300);
 }
 void loop()
 {
@@ -30,18 +30,16 @@ void loop()
   //delay(800);
   arm_dir_up();
   move_arm(1);
-  if ((time - prev_time) >= 1500) {
-    delay(1000);
-    arm_dir_down();
-    move_arm(220);
-    delay(1000);
+  if ((time - prev_time) >= 1800) {
+    /*arm_dir_down();
+    move_arm(200);*/
     time = millis();
     prev_time = time;
-  }
-  /*while(1) {
-    Serial.println("Done");
+    while(1) {
+    //Serial.println("Done");
     delay(1000);
-  }*/
+  }
+  }
   /*arm_dir_up();
   move_arm(1);
   if (time >= 1500) {
