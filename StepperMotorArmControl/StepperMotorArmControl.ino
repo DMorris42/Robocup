@@ -7,8 +7,8 @@ Note that the stepper moves 1.8 degreees per step (+/- 5%, full step, no load)
 #define GEAR_RATIO 3
 
 // Currently on stepper port 3 (pins closest to motor, far side of board)
-int M3dirpin = 35;
-int M3steppin = 34;
+int M3dirpin = 31; //35?
+int M3steppin = 30;  //34?
 static volatile int time = 0;
 static volatile int prev_time = 0;
 
