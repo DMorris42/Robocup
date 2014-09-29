@@ -27,50 +27,43 @@ Front Right GP2D12 on pin 0
 GP2Y0A02YK on pin 2
 */
 
-void setup() {
-  Serial.begin(9600);
+int read_left_IR (byte pin) {
+  while (GP2D12LeftdataIndex < 5) {
+    GP2D12Leftdata[GP2D12LeftdataIndex++] = read_gp2d12_range(pin);
+  }
+  GP2D12Leftdist = filterSum(GP2D12Leftdata)/GP2D12LeftdataIndex;
+  GP2D12LeftdataIndex = 0;
+  return GP2D12Leftdist;
 }
 
-void loop() {
-  GP2D12Leftdata[GP2D12LeftdataIndex++] = read_gp2d12_range(GP2D12Leftpin);
-  
-  GP2D12Rightdata[GP2D12RightdataIndex++] = read_gp2d12_range(GP2D12Rightpin);
-  
-  LongIRdata[LongIRdataIndex++] = read_IR_long_range(LongIRpin);
-  
-  GP2D120data[GP2D120dataIndex++] = read_gp2d120_range(GP2D120pin);
-  
-  if (GP2D120dataIndex == numSamples) {
-    GP2D120dist = sum(GP2D120data)/GP2D120dataIndex;
-    Serial.print("GP2D120 Range: ");
-    Serial.println(GP2D120dist, DEC);
-    GP2D120dataIndex = 0;
+int read_right_IR (byte pin) {
+  while (GP2D12RightdataIndex < 5) {
+    GP2D12Rightdata[GP2D12RightdataIndex++] = read_gp2d12_range(pin);
   }
-  
-  if (GP2D12LeftdataIndex == numSamples) {
-    GP2D12Leftdist = sum(GP2D12Leftdata)/GP2D12LeftdataIndex;
-    Serial.print("GP2D12 Left Range: ");
-    Serial.println(GP2D12Leftdist, DEC);
-    GP2D12LeftdataIndex = 0;
-  }
-  
-  if (GP2D12RightdataIndex == numSamples) {
-    GP2D12Rightdist = sum(GP2D12Rightdata)/GP2D12RightdataIndex;
-    Serial.print("GP2D12 Right Range: ");
-    Serial.println(GP2D12Rightdist, DEC);
-    GP2D12RightdataIndex = 0;
-  }
-  
-  if (LongIRdataIndex == numSamples) {
-    LongIRdist = sum(LongIRdata)/LongIRdataIndex;
-    Serial.print("Long IR Range: ");
-    Serial.println(LongIRdist, DEC);
-    LongIRdataIndex = 0;
-  }
-  delay(300);
+  GP2D12Rightdist = filterSum(GP2D12Rightdata)/GP2D12RightdataIndex;
+  GP2D12RightdataIndex = 0;
+  return GP2D12Rightdist;
 }
 
-int sum(int* dataArray) {
+int read_short_IR (byte pin) {
+  while (GP2D120dataIndex < 5) {
+    GP2D120data[GP2D120dataIndex++] = read_gp2d120_range(pin);
+  }
+  GP2D120dist = filterSum(GP2D120data)/GP2D120dataIndex;
+  GP2D120dataIndex = 0;
+  return GP2D120dist;
+}
+
+int read_long_IR (byte pin) {
+  while (LongIRdataIndex < 5) {
+    LongIRdata[LongIRdataIndex++] = read_IR_long_range(pin);
+  }
+  LongIRdist = filterSum(LongIRdata)/LongIRdataIndex;
+  LongIRdataIndex = 0;
+  return LongIRdist;
+}
+
+int filterSum(int* dataArray) {
   int i;
   int sum = 0;
   for (i = 0; i < numSamples; i++) {
