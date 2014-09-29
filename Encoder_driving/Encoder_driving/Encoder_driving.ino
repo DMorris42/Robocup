@@ -6,11 +6,13 @@ Note right encoder lags left. This accumulates over time and is a problem. Need 
 
 #define DRIVE_SPEED 155
 #define STOP_SPEED 90
-#define REVERSE_SPEED 55
-#define TURN_WHEEL_SLOW 55
-#define TURN_WHEEL_FAST 125
+#define REVERSE_SPEED 25
+#define TURN_WHEEL_SLOW 25
+#define TURN_WHEEL_FAST 155
 
 #define REVOLUTION_DIST 219  //Distance, in mm, covered in one rev of wheel with tracks (measured; could be up to 219 mm)
+#define MAX_ENCODER_VAL 1325
+#define ANGLE_SCALE 67
 
 typedef enum Direction{
   forward,
@@ -37,6 +39,8 @@ volatile int lastReportedRevolutionsRight = 0;
 
 volatile int dist_travelled = 0; //Distance robot has travelled (total dist in any combo of directions)
 
+volatile int angle_turned = 0;  //Angle turned, in degrees
+
 Servo motor_left;
 Servo motor_right;
 
@@ -52,7 +56,9 @@ void setup() {
   motor_left.attach(3);
   motor_right.attach(2);
   Serial.begin(9600);
-  drive();
+  //drive();
+  turn_left();
+  //reverse();
 }
 
 
@@ -71,7 +77,7 @@ void loop()
   //DISTANCE TESTING CODE END
   
   //DISTANCE DRIVING CODE BEGIN
-  if (max(encoderPosLeft, encoderPosRight) != 0) {
+  /*if (max(encoderPosLeft, encoderPosRight) != 0) {
     //dist_travelled = max(revolutionsLeft, revolutionsRight)*REVOLUTION_DIST + (float(max(encoderPosLeft, encoderPosRight))/float(ENCODER_COUNTS))* REVOLUTION_DIST; //Taking max
     dist_travelled = ((revolutionsLeft + revolutionsRight)/2)*REVOLUTION_DIST + (float(max(encoderPosLeft, encoderPosRight))/float(ENCODER_COUNTS))* REVOLUTION_DIST; //Taking average
   }
@@ -79,14 +85,12 @@ void loop()
     //dist_travelled = max(revolutionsLeft, revolutionsRight)*REVOLUTION_DIST;
     dist_travelled = ((revolutionsLeft + revolutionsRight)/2) * REVOLUTION_DIST;
   }
-  Serial.println(dist_travelled, DEC);
+  Serial.println(dist_travelled, DEC);*/
   
-  if (dist_travelled >= 1020) {
+  /*if (dist_travelled >= 1020) {
     motor_stop();
     Serial.print("DISTANCE REACHED:");
     Serial.print(dist_travelled, DEC);
-    /*while (1) {
-    }*/
     delay(3000);
     dist_travelled = 0;
     revolutionsLeft = 0;
@@ -97,7 +101,7 @@ void loop()
     Serial.println(dist_travelled, DEC);
   }
   Serial.println("Driving");
-  drive();
+  drive();*/
   
   //DISTANCE TESTING CODE END 
     
@@ -123,11 +127,44 @@ void loop()
   }*/
   
   //ENCODER VALUE TESTING END
+  
+  //ROTATION TESTING BEGIN
+  
+  if (max(encoderPosLeft, encoderPosRight) != 0) {
+    if (robot_dir == left) {
+      angle_turned = ((-1*revolutionsLeft + revolutionsRight)/2)*ANGLE_SCALE + (float((((MAX_ENCODER_VAL - encoderPosLeft) + encoderPosRight)/2))/float(ENCODER_COUNTS))*ANGLE_SCALE; //Taking average
+    }
+    else {
+      angle_turned = ((revolutionsLeft + -1*revolutionsRight)/2)*ANGLE_SCALE + (float((((MAX_ENCODER_VAL - encoderPosRight) + encoderPosLeft)/2))/float(ENCODER_COUNTS))*ANGLE_SCALE; //Taking average
+    }
+  }
+  else {
+    if (robot_dir == left) {
+      angle_turned = ((-1*revolutionsLeft + revolutionsRight)/2) * ANGLE_SCALE;
+    }
+    else {
+      angle_turned = ((-1*revolutionsRight + revolutionsLeft)/2)* ANGLE_SCALE;
+    }
+  }
+  //Serial.println(angle_turned, DEC);
+  
+  if (angle_turned >= 360) {
+    motor_stop();
+    //Serial.println("ANGLE REACHED");
+    //Serial.println(angle_turned, DEC);
+    angle_turned = 0;
+    revolutionsLeft = 0;
+    revolutionsRight = 0;
+    encoderPosLeft = 0;
+    encoderPosRight = 0;
+    delay(1000);
+    turn_left();
+  }
 }
 
 // Interrupt on A changing state
 void doEncoderLeft(){
-  if (robot_dir != backwards) {
+  if ((robot_dir != backwards) && (robot_dir != left)) {
     encoderPosLeft++;
     if (encoderPosLeft >= ENCODER_COUNTS) {
         encoderPosLeft = 0;
@@ -148,7 +185,7 @@ void doEncoderLeft(){
 
 //Interrupt on A changing state
 void doEncoderRight() {
-  if (robot_dir != backwards) {
+  if ((robot_dir != backwards) && (robot_dir != right)) {
     encoderPosRight++;
     if (encoderPosRight >= ENCODER_COUNTS) {
       encoderPosRight = 0;
