@@ -80,7 +80,7 @@ float read_gp2d120_range(byte pin) {
   float range = 0;
   tmp = analogRead(pin);
   range = (2914.0 /((float)tmp + 3.0)) - 1.0;
-  if (tmp < 6) {
+  if ((tmp < 6) || (range > 30)) {
     range =  -1; // Error value
   }
   else {

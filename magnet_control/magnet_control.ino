@@ -1,4 +1,4 @@
-int pin = 6;
+int pin = A6;
 
 void setup() {
   pinMode(pin, OUTPUT);
@@ -6,8 +6,8 @@ void setup() {
 }
 
 void loop() {
-  /*digitalWrite(pin, HIGH);
-  delay(10);
+  digitalWrite(pin, HIGH);
+  delay(5000);
   digitalWrite(pin, LOW);
-  delay(10);*/
+  delay(5000);
 }
