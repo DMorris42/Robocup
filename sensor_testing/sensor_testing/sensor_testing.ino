@@ -1,10 +1,11 @@
 float val = 0;
-int pin = 1;
+int pin = 3;
 /*
 GP2D120 on pin 1
 Front Left GP2S12 on pin 10
 Front Right GP2D12 on pin 0
 GP2Y0A02YK on pin 2
+UL on pin 3
 */
 const int numSamples = 5;
 int data[numSamples] = {0};
@@ -22,8 +23,8 @@ void loop() {
   time = millis();
   //val = read_gp2d12_range(pin);
   //val = read_IR_long_range(pin);
-  val = read_gp2d120_range(pin);
-  //val = read_ul_sensor_range(pin);
+  //val = read_gp2d120_range(pin);
+  val = read_ul_sensor_range(pin);
   if (dataIndex == numSamples) {
     val = sum(data)/dataIndex;
     dataIndex = 0;
