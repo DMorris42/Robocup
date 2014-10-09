@@ -1,5 +1,5 @@
 float val = 0;
-int pin = 3;
+int pin = 1;
 /*
 GP2D120 on pin 1
 Front Left GP2S12 on pin 10
@@ -22,9 +22,9 @@ void setup() {
 void loop() {
   time = millis();
   //val = read_gp2d12_range(pin);
-  //val = read_IR_long_range(pin);
+  val = read_IR_long_range(pin);
   //val = read_gp2d120_range(pin);
-  val = read_ul_sensor_range(pin);
+  //val = read_ul_sensor_range(pin);
   if (dataIndex == numSamples) {
     val = sum(data)/dataIndex;
     dataIndex = 0;

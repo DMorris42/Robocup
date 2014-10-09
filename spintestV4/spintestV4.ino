@@ -90,7 +90,7 @@ Direction robot_dir = stopped;
   int upper_IR_conv_dist = 0;
   int difference_dist = 0;
   int difference_IR_dist = 0;
-  int tolerance_upper_lower = 20;
+  int tolerance_upper_lower = 40;
   int initial_angle = 0;
   int final_angle = 0;
   int weight_position = 0;
@@ -127,7 +127,7 @@ int ULdata[numSamples] = {0};
 int ULdataIndex = 0;
 int ULdist = 0;
 
-int GP2D120pin = 1;
+int bottomLongIRpin = 1;
 int GP2D12Leftpin = 10;
 int GP2D12Rightpin = 0;
 int LongIRpin = 2;
@@ -323,7 +323,6 @@ void loop() {
         if (interval_count > 1000) {//when the robot has been in peace for a while, go into weight search mode (do some calc to determine the count number)
         //Search and pick up weight every once in awhile if there are no walls nearby
           interval_count = 0; //reset the count
-          //Serial.println("Two Seconds");
           //time = millis();
           //prev_time = time;
           scan_state = true;
@@ -369,24 +368,6 @@ void loop() {
               scan_state = false;
               
             }
-            /*
-            else {   
-              if (new_weight) {
-                do_calc = true;
-                new_weight = false;  
-                final_angle = current_angle;
-              }
-            }
-            if (do_calc){
-              weight_position = (final_angle-initial_angle)/2 + initial_angle;
-              do_calc = false;
-              weight_located = true;
-            }
-            if (weight_located) {
-              homing_state = true; 
-              start_of_homing = true;
-            }
-           */
           }
            
           
@@ -411,7 +392,7 @@ void loop() {
                 cant_find = true;
               }
                 
-              if ((lower_IR_dist > 5)&&(difference_dist > tolerance_upper_lower)) { //need stuff here
+              if ((lower_IR_dist > 20)&&(difference_dist > tolerance_upper_lower)) { //need stuff here
                 motor_drive();
                 //delay(500);
               }
@@ -420,7 +401,12 @@ void loop() {
                 delay(10);
                 motor_stop();
               }
-              else if (difference_dist > tolerance_upper_lower){
+              /*else if (difference_dist > tolerance_upper_lower){
+                collection_state = true;
+                dont_pick_up = false;
+                cant_find = false;
+              }*/
+              else if (lower_IR_dist <=20) {
                 collection_state = true;
                 dont_pick_up = false;
                 cant_find = false;
@@ -433,14 +419,17 @@ void loop() {
               }
             }
             motor_drive();
-            delay(320);
+            delay(600);
             
             turn_left();
             delay(20);
             motor_stop();
-            read_colour_sensor();
-            check_location();
-            if ((location == BLACK_AREA)&&(!dont_pick_up)) {
+            //read_colour_sensor();
+            //check_location();
+            /*if ((location == BLACK_AREA)&&(!dont_pick_up)) {
+              pick_up();
+            }*/
+            if (!dont_pick_up) {
               pick_up();
             }
             else {
@@ -467,68 +456,9 @@ void loop() {
 }
 
 
-
-void rotate(int angle, bool clockwise, int current_angle){
-  int angle_error = angle - current_angle;
-  
-  if ((clockwise && (angle_error > 3))||(!clockwise && (angle_error <-3))) {
-    //turn_clock();    //Control the speed of turning based on the error maybe? for more accurate control of rotation angle
-  }
-  else if ((!clockwise && (angle_error >3))||(clockwise && (angle_error <-3))) {
-    //turn_anticlock(); //function
-  }
-  else {
-    motor_stop(); //function
-  }
-}
-
-/*
-void move_to_weight(void){
-  if (lower_IR_dist > 5){ //need stuff here
-    motor_drive();
-  }
-  /*
-  else if (lower_IR_dist <= 4 || (lower_IR_dist == -1)){   THIS IS FOR LATER WILL NEED ENCODER CHANGE
-     reverse(); //MIGHT NEED NAME CHANGE 
-  }
-  else{
-    motor_stop();
-    collection_state = true;
-  }*/
-  /*else if (lower_IR_dist <= 5){       //THIS WILL GET DELETED
-    motor_stop();
-    collection_state = true;
-  }*/
-  //IR_check();
-  //DEBUG
-  /*while (1) {
-    lower_IR_dist = read_short_IR(GP2D120pin);
-    Serial.println(lower_IR_dist, DEC);
-    delay(300);
-  }*/
-  /*read_short_IR(GP2D120pin);
-  while (lower_IR_dist > 5) {
-    motor_stop();
-    //IR_check();
-    lower_IR_dist = read_short_IR(GP2D120pin);
-    Serial.println(lower_IR_dist, DEC);
-    delay(10);
-  }*/
-  
-  /*
-  Serial.println(lower_IR_dist, DEC);
-  motor_stop();
-  turn_left();
-  delay(50);
-  motor_stop();
-  homing_state = false;
-  */
-  //collection_state = true;
-//}
-
 void IR_check(void){
   upper_IR_dist = read_long_IR (LongIRpin);
-  lower_IR_dist = read_short_IR (GP2D120pin);
+  lower_IR_dist = read_long_IR (bottomLongIRpin);
   left_IR_dist = read_left_IR(GP2D12Leftpin);
   right_IR_dist = read_right_IR(GP2D12Rightpin);
   front_US = read_US(ULpin);
