@@ -20,7 +20,6 @@ void loop() {
   if (reading == HIGH) {
     digitalWrite(led_pin, HIGH);
     Serial.println("WORKING!");
-    delay(1000);
   }
   else {
     digitalWrite(led_pin, LOW);

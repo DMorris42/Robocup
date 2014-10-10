@@ -7,7 +7,7 @@ Front Right GP2D12 on pin 0
 GP2Y0A02YK on pin 2
 UL on pin 3
 */
-const int numSamples = 5;
+const int numSamples = 10;
 int data[numSamples] = {0};
 int dataIndex = 0;
 unsigned volatile long time = 0;
@@ -64,9 +64,18 @@ float read_IR_long_range(byte pin) {
   int tmp = 0;
   float range = 0;
   tmp = analogRead(pin);
-  //range = (9462.0 /((float)tmp - 16.92));
+  if (pin == 2) {
+    range = (9462.0 /((float)tmp - 16.92)) + 9; //About 6cm too long at long range
+  }
+  else if (pin == 1) {
+    //range = (9462.0 /((float)tmp - 16.92)) + 11;
+    range = 30431 * pow(float(tmp), -1.169) + 4;
+  }
+  else {
+    range = (9462.0 /((float)tmp - 16.92));
+  }
   //range = (9900.0 /((float)tmp - 16.92));
-  range = 30431 * pow(float(tmp), -1.169);
+  //range = 30431 * pow(float(tmp), -1.169);
   if (tmp <= 16.92) {
     range =  -1; // Error value
   }
