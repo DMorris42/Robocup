@@ -52,6 +52,7 @@ static const uint16_t BLACK_B_HIGH = 270;
 static uint16_t BLACK_RED = 0;
 static uint16_t BLACK_GREEN = 0;
 static uint16_t BLACK_BLUE = 0;
+static uint16_t COLOUR_SUM = 0;
 
 static const uint16_t COLOUR_TOLERANCE = 80;
 
@@ -90,8 +91,8 @@ Direction robot_dir = stopped;
   int upper_IR_conv_dist = 0;
   int difference_US_dist = 0;
   int difference_IR_dist = 0;
-  int tolerance_upper_lower = 10;
-  unsigned int min_consec_weight_detects = 5;
+  int tolerance_upper_lower = 8;
+  unsigned int min_consec_weight_detects = 4;
   int initial_angle = 0;
   int final_angle = 0;
   int weight_position = 0;
@@ -108,9 +109,10 @@ Direction robot_dir = stopped;
     
 const int numSamples = 10;
 
-int GP2D120data[numSamples] = {0};
-int GP2D120dataIndex = 0;
-int GP2D120dist = 0;
+int LowerIRdata[numSamples] = {0};
+int LowerIRdataIndex = 0;
+int LowerIRdist = 0;
+int prev_lower_IR_dist = 0;
 
 int GP2D12Leftdata[numSamples] = {0};
 int GP2D12LeftdataIndex = 0;
@@ -128,15 +130,14 @@ int ULdata[numSamples] = {0};
 int ULdataIndex = 0;
 int ULdist = 0;
 
-int bottomLongIRpin = 1;
+int bottomIRpin = 1;
 int GP2D12Leftpin = 10;
 int GP2D12Rightpin = 0;
 int topLongIRpin = 2;
 int ULpin = 3;
 
-static unsigned int bottomIRMinRange = 15;
-static unsigned int bottomIRMaxRange = 100; //150 on datasheet
-//Loses reliability around 90-100 cm
+static unsigned int bottomIRMinRange = 8;
+static unsigned int bottomIRMaxRange = 80;
 
 int Armdirpin = 31;
 int Armsteppin = 30;
@@ -169,6 +170,7 @@ int consecutive_weight_detects = 0;
 volatile unsigned long time = 0;
 volatile unsigned long prev_time = 0;
 volatile unsigned long prev_colour_time = 0;
+volatile unsigned long prev_scan_time = 0;
 
 bool first_run = false;
 bool enter_scan_state = true;
@@ -199,10 +201,10 @@ void setup() {
   read_colour_sensor();
   delay(2000);
   // NEED TO FIX THIS...
-  read_colour_sensor();
+  /*read_colour_sensor();
   BLACK_RED = red;
   BLACK_GREEN = green;
-  BLACK_BLUE = blue;
+  BLACK_BLUE = blue;*/
   //Serial.begin(9600);
 }
 
@@ -213,27 +215,34 @@ void loop() {
   // put your main code here, to run repeatedly:
   //keep a count of cycles to record the angle rotated (this value must be derived from experiments to get the right conversion value which accounts for rotating speed and system clock speed - may want to use interrupts for consistency)
   if (first_start){ //only do at initial boot up
+    motor_drive();
+    delay(1500);
+    motor_stop();
     IR_check();
     read_colour_sensor();
+    BLACK_RED = red;
+    BLACK_GREEN = green;
+    BLACK_BLUE = blue;
+    COLOUR_SUM = colour_sum;
     //for (i=0; i<10; i++){ //more stable condition by checking more than one instance
     //  if (upper_IR_dist == -1) { //better more versatile condition ?? more specific
         wall_state = true;
     //  }
     //}
-    delay(50);
+    motor_drive();
     first_start = false;
   }
   
   while (wall_state) {
-    
+    time = millis();
     IR_check();
     
     left_obstacle_cruising = ((left_IR_dist < 12)&&(left_IR_dist > 0));
     right_obstacle_cruising = ((right_IR_dist < 12)&&(right_IR_dist > 0));
-    front_obstacle_cruising = ((upper_IR_dist < 40)&&(upper_IR_dist > 0));
-    left_obstacle = ((left_IR_dist < 25)&&(left_IR_dist > 0));
-    right_obstacle = ((right_IR_dist < 25)&&(right_IR_dist > 0));
-    front_obstacle_US = ((front_US < 35)&&(front_US > 0));
+    front_obstacle_cruising = ((upper_IR_dist < 50)&&(upper_IR_dist > 0));
+    left_obstacle = ((left_IR_dist < 10)&&(left_IR_dist > 0));//30
+    right_obstacle = ((right_IR_dist < 10)&&(right_IR_dist > 0));//30
+    front_obstacle_US = ((front_US < 40)&&(front_US > 0));//50
     //for front wall 
     //(want the front distance to be minimal as possible while still being able to not crash into walls infront - back and front of the robot) 
       //(depends on the distance between the front sensor and the side of the robot and the sharpness of the turn the robot can make - experiment)
@@ -310,17 +319,21 @@ void loop() {
         
         
         
-        /*time = millis();
-        */
+        time = millis();
+        
         if (!left_obstacle && !right_obstacle){
           interval_count++; //keeps count when there is no obstacles around the robot
         }
-        /*
         else {
-          prev_time = time;
-        }*/
+          prev_scan_time = time;
+          if (left_obstacle) {
+          }
+          else if (right_obstacle) {
+          }
+        }
         
-        if (interval_count > 500) {//when the robot has been in peace for a while, go into weight search mode (do some calc to determine the count number)
+        if (interval_count > 40) {//when the robot has been in peace for a while, go into weight search mode (do some calc to determine the count number)
+        //if (time - prev_scan_time >= 1000) {
         //Search and pick up weight every once in awhile if there are no walls nearby
           interval_count = 0; //reset the count
           //time = millis();
@@ -347,18 +360,17 @@ void loop() {
             
             turn_right();
             //conversion of upper IR dist to match lower IR dist
-            
-            if ((abs(difference_US_dist) > tolerance_upper_lower) && (difference_IR_dist > tolerance_upper_lower)) { //if the distance from the upper and bottom sensors are different (potentially a weight)
+            if ((abs(difference_US_dist) > tolerance_upper_lower) && (abs(difference_IR_dist > tolerance_upper_lower))) { //if the distance from the upper and bottom sensors are different (potentially a weight)
             //check for consequtive difference values being above a tolerance to account for a slight mis allignment in the top and bottom sensors
+              motor_stop();
               consecutive_weight_detects++; 
-              //Serial.println("Weight?");
             }
             else {
               consecutive_weight_detects = 0;
+              turn_right();
             }
             if (consecutive_weight_detects > min_consec_weight_detects){
               weight_found = true;
-              //Serial.println("WEIGHT!");
             }
             if (weight_found) {
               //initial_angle = current_angle;
@@ -394,16 +406,16 @@ void loop() {
                 cant_find = true;
               }
                 
-              if ((lower_IR_dist > 25)&&(difference_US_dist > tolerance_upper_lower)) { //need stuff here
+              if ((lower_IR_dist > 10)&&(difference_US_dist > tolerance_upper_lower)) { //need stuff here
                 motor_drive();
                 //delay(500);
               }
-              else if (lower_IR_dist < 0) {
+              else if ((lower_IR_dist < 0) || (difference_IR_dist < tolerance_upper_lower)) {
                 turn_left();
-                delay(1);
-                motor_stop();
+                //delay(1);
+                //motor_stop();
               }
-              else if (lower_IR_dist <=25) {
+              else if (lower_IR_dist <=10) {
                 collection_state = true;
                 dont_pick_up = false;
                 cant_find = false;
@@ -415,18 +427,39 @@ void loop() {
                 dont_pick_up = true;
               }
             }
-            motor_drive();
-            delay(700);
-            
-            turn_left();
-            delay(20);
-            motor_stop();
+            time = millis();
+            prev_time = time;
+            IR_check();
+            bool not_found = false;
+            while ((lower_IR_dist > 6) && !not_found) {
+              //Serial.print("Lower dist: ");
+              //Serial.println(lower_IR_dist, DEC);
+              time = millis();
+              IR_check();
+              motor_drive();
+              if ((time - prev_time) > 2000) {
+                not_found = true;
+                dont_pick_up = true;
+              }
+              if ((lower_IR_dist == -1) && (prev_lower_IR_dist < 10)) {
+                not_found = true;
+                dont_pick_up = false;
+                reverse();
+                delay(20);
+              }
+              prev_lower_IR_dist = lower_IR_dist;
+            }
             //read_colour_sensor();
             //check_location();
             /*if ((location == BLACK_AREA)&&(!dont_pick_up)) {
               pick_up();
             }*/
             if (!dont_pick_up) {
+              /*motor_drive();
+              delay(50);*/
+              turn_right();
+              delay(40);
+              motor_stop();
               pick_up();
             }
             else {
@@ -444,7 +477,8 @@ void loop() {
             homing_state = false;
           }
         }
-        //time = millis();
+        time = millis();
+        prev_scan_time = time;
         
       }
       //first_run = true;
@@ -455,12 +489,13 @@ void loop() {
 
 void IR_check(void){
   upper_IR_dist = read_long_IR (topLongIRpin);
-  lower_IR_dist = read_long_IR (bottomLongIRpin);
+  lower_IR_dist = read_lower_IR (bottomIRpin);
   left_IR_dist = read_left_IR(GP2D12Leftpin);
   right_IR_dist = read_right_IR(GP2D12Rightpin);
   front_US = read_US(ULpin);
   if (upper_IR_dist != -1) {
-    upper_IR_dist -= 5; //Temp fix??
+    upper_IR_dist -= 80/(upper_IR_dist); //Temp fix??
+    //upper_IR_dist -= 4;
     upper_IR_conv_dist = upper_IR_dist - 13; //13 for now but change to more accurate number later
   }
   else {
@@ -469,9 +504,9 @@ void IR_check(void){
   if ((lower_IR_dist > bottomIRMaxRange) || (lower_IR_dist < bottomIRMinRange)) {
     lower_IR_dist = -1;
   }
-  else {
+  /*else {
     lower_IR_dist += 3; //Temp fix, as top and bottom at different ranges
-  }
+  }*/
   /*Serial.print("UPPER IR: ");
   Serial.println(upper_IR_dist, DEC);
   Serial.print("LOWER IR: ");
@@ -485,6 +520,7 @@ void IR_check(void){
   Serial.println(lower_IR_dist, DEC);
   Serial.print("Converted upper dist: ");
   Serial.println(upper_IR_conv_dist, DEC);*/
+  delay(100);
   if (lower_IR_dist == -1) {
     difference_IR_dist = 0; //just a number below the chosen tolerance
     difference_US_dist = 0;
@@ -510,6 +546,16 @@ int read_left_IR (byte pin) {
   return GP2D12Leftdist;
 }
 
+int read_lower_IR (byte pin) {
+  while (LowerIRdataIndex < numSamples) {
+    LowerIRdata[LowerIRdataIndex++] = read_gp2d12_range(pin);
+  }
+  LowerIRdist = filterSum(LowerIRdata, &LowerIRdataIndex);
+  LowerIRdist = LowerIRdist/LowerIRdataIndex;
+  LowerIRdataIndex = 0;
+  return LowerIRdist;
+}
+
 int read_right_IR (byte pin) {
   while (GP2D12RightdataIndex < numSamples) {
     GP2D12Rightdata[GP2D12RightdataIndex++] = read_gp2d12_range(pin);
@@ -520,7 +566,7 @@ int read_right_IR (byte pin) {
   return GP2D12Rightdist;
 }
 
-int read_short_IR (byte pin) {
+/*int read_short_IR (byte pin) {
   while (GP2D120dataIndex < numSamples) {
     GP2D120data[GP2D120dataIndex++] = read_gp2d120_range(pin);
   }
@@ -528,7 +574,7 @@ int read_short_IR (byte pin) {
   GP2D120dist = GP2D120dist/GP2D120dataIndex;
   GP2D120dataIndex = 0;
   return GP2D120dist;
-}
+}*/
 
 int read_US (byte pin) {
   while (ULdataIndex < numSamples) {
@@ -587,7 +633,7 @@ float read_IR_long_range(byte pin) {
   if (pin == topLongIRpin) {
     range = (9462.0 /((float)tmp - 16.92)) + 12; //About 6cm too long at long range
   }
-  else if (pin == bottomLongIRpin) {
+  else if (pin == bottomIRpin) {
     range = 30431 * pow(float(tmp), -1.169) + 1; //May want look-up table as pow slow
   }
   else {
@@ -772,8 +818,17 @@ void read_colour_sensor(void) {
   }
 }*/
 
-void check_location(void) {
+/*void check_location(void) {
   if (colour_sum < 1480) {
+    location = BLACK_AREA;
+  }
+  else {
+    location = AREA_UNKNOWN;
+  }
+}*/
+
+void check_location(void) {
+  if (abs(COLOUR_SUM - colour_sum) >= COLOUR_TOLERANCE) {
     location = BLACK_AREA;
   }
   else {

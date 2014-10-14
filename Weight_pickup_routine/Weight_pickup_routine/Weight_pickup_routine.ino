@@ -45,7 +45,7 @@ void pick_up(void) {
   arm.arm_dir_up();
   arm.move_arm(320);
   
-  rack_pinion.move_RP(950);
+  rack_pinion.move_RP(1150);
   delay(50);
   limit_switch_reading = digitalRead(limit_switch_pin);
   while (limit_switch_reading == LOW) {

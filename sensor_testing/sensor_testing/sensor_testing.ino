@@ -1,7 +1,7 @@
 float val = 0;
 int pin = 1;
 /*
-GP2D120 on pin 1
+Front IR on pin 1
 Front Left GP2S12 on pin 10
 Front Right GP2D12 on pin 0
 GP2Y0A02YK on pin 2
@@ -21,8 +21,8 @@ void setup() {
 
 void loop() {
   time = millis();
-  //val = read_gp2d12_range(pin);
-  val = read_IR_long_range(pin);
+  val = read_gp2d12_range(pin);
+  //val = read_IR_long_range(pin);
   //val = read_gp2d120_range(pin);
   //val = read_ul_sensor_range(pin);
   if (dataIndex == numSamples) {
@@ -33,7 +33,7 @@ void loop() {
   else if (val == -1) {
     Serial.println(val);
   }
-  delay(100);
+  delay(50);
 }
 
 int sum(int* dataArray) {
@@ -51,7 +51,7 @@ float read_gp2d12_range(byte pin) {
   float range = 0;
   tmp = analogRead(pin);
   range = (6787.0 /((float)tmp - 3.0)) - 4.0;
-  if ((tmp < 3) || (range > 85)) {
+  if ((tmp < 3) || (range > 83)) {
     range =  -1; // Error value
   }
   else {
