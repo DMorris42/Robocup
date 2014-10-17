@@ -6,8 +6,8 @@ using the rack_pinion.h library
 #include "rack_pinion.h"
 #include "arm.h"
 
-int Armdirpin = 31;
-int Armsteppin = 30;
+int Armdirpin = 33;//31
+int Armsteppin = 32;//30
 int RPdirpin = 35; 
 int RPsteppin = 34;
 static volatile int time = 0;

@@ -127,6 +127,7 @@ bool front_obstacle_US = false;
 bool weight_found = false;
 bool pickup_state = false;
 bool refind_weight = false;
+bool from_scan = false;
 int last_turn = 0;
 int last_turn_slow = 0;
 int side_dist_difference = 0;
@@ -218,9 +219,7 @@ void scanning () {
   right_obstacle = ((right_IR_dist < 20)&&(right_IR_dist > 0));
 
 
-  if (left_obstacle && right_obstacle){ //if the robot has walls on both sides, dont scan
-  }
-  else if (left_obstacle){ //if wall on left scan right
+  if (left_obstacle){ //if wall on left scan right
     scan_right();
   }
   else if (right_obstacle){ //if wall on right scan left
@@ -246,6 +245,7 @@ void scan_left(){
       motor_stop();
       delay(10);
       consecutive_weight_detects = 0;
+      from_scan = true;
     }
   }
 }
@@ -265,6 +265,7 @@ void scan_right(){
       motor_stop();
       delay(10);
       consecutive_weight_detects = 0;
+      from_scan = true;
     }
   }    
 }
@@ -295,7 +296,7 @@ void homing() {
     }
     if (refind_weight){
       time = millis();
-      if ((time - weight_loss_time) < 1000){
+      if ((time - weight_loss_time) < 1500){
         motor_stop();
         turn_left_slow();
       }
@@ -338,13 +339,25 @@ void homing() {
   }
   digitalWrite(DAN_LED_PINS, LOW);
   if (pickup_state) { //make this process more smart to ensure pickup of weights on sides
-    motor_drive_slow();
-    delay(500);
-    turn_right();
-    delay(75);
-    motor_stop();
-    pick_up();
-    motor_drive();
+    if (from_scan){
+      from_scan = false;
+      motor_drive_slow();
+      delay(500);
+      turn_right();
+      delay(75);
+      motor_stop();
+      pick_up();
+      motor_drive();
+    }
+   else {
+      motor_drive_slow();
+      delay(400);
+      turn_right();
+      delay(55);
+      motor_stop();
+      pick_up();
+      motor_drive();
+   }
   }
 }
 
